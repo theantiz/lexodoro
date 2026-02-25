@@ -21,7 +21,7 @@
   --color-neon-cyan: var(--neon-cyan);
   --color-neon-purple: var(--neon-purple);
   --color-neon-orange: var(--neon-orange);
-  --font-mono: var(--font-geist-mono), 'Fira Code', 'JetBrains Mono', monospace;
+  --font-mono: 'Fira Code', 'JetBrains Mono', 'SFMono-Regular', Menlo, Monaco, Consolas, monospace;
 }
 
 * {

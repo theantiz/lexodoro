@@ -19,24 +19,6 @@ Lexodoro is a compiler-themed Pomodoro timer built with Next.js.
 - Fullscreen mode toggle
 - Custom Lexodoro app icon
 
-## Run Locally
-
-```bash
-npm install
-npm run dev
-```
-
-Open `http://localhost:3000`.
-
-## Scripts
-
-```bash
-npm run dev
-npm run lint
-npm run build
-npm run start
-```
-
 ## Tech Stack
 
 - Next.js (App Router)
