@@ -343,7 +343,7 @@ export default function Home() {
               : "border-zinc-700 bg-zinc-900/70 text-zinc-300"
           }`}
         >
-          SETTINGS
+          ⚙
         </button>
         <button
           onClick={handleFullscreenToggle}
@@ -355,7 +355,7 @@ export default function Home() {
               : "border-zinc-700 bg-zinc-900/70 text-zinc-300"
           }`}
         >
-          {isFullscreen ? "EXIT FULL" : "FULLSCREEN"}
+          {isFullscreen ? "⤡" : "⤢"}
         </button>
       </div>
       <div className="fixed top-4 left-4 text-zinc-700 text-xl font-mono">┌</div>
