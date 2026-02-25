@@ -1,26 +1,126 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #080b12;
+  --foreground: #cdd6e3;
+  --terminal-bg: rgba(18, 24, 34, 0.92);
+  --neon-green: #3fb950;
+  --neon-cyan: #58a6ff;
+  --neon-purple: #a371f7;
+  --neon-orange: #f0883e;
+  --grid-color: rgba(88, 166, 255, 0.045);
+  --border-subtle: rgba(151, 164, 180, 0.2);
+  --soft-glow: rgba(88, 166, 255, 0.08);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-terminal-bg: var(--terminal-bg);
+  --color-neon-green: var(--neon-green);
+  --color-neon-cyan: var(--neon-cyan);
+  --color-neon-purple: var(--neon-purple);
+  --color-neon-orange: var(--neon-orange);
+  --font-mono: var(--font-geist-mono), 'Fira Code', 'JetBrains Mono', monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  box-sizing: border-box;
 }
 
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at 20% -10%, rgba(88, 166, 255, 0.18), transparent 40%),
+    radial-gradient(circle at 90% 110%, rgba(163, 113, 247, 0.12), transparent 45%),
+    var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+  line-height: 1.4;
+}
+
+/* Grid pattern - subtle */
+body::after {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    linear-gradient(var(--grid-color) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-color) 1px, transparent 1px);
+  background-size: 30px 30px;
+  pointer-events: none;
+  z-index: 999;
+}
+
+/* Terminal card style */
+.terminal-card {
+  background: var(--terminal-bg);
+  border: 1px solid var(--border-subtle);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.28), inset 0 1px 0 rgba(255, 255, 255, 0.02);
+  backdrop-filter: blur(5px);
+  border-radius: 10px;
+  position: relative;
+  overflow: hidden;
+}
+
+.terminal-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 30px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.03), rgba(255, 255, 255, 0.015));
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.terminal-card::after {
+  content: '● ● ●';
+  position: absolute;
+  top: 8px;
+  left: 12px;
+  font-size: 9px;
+  color: var(--neon-green);
+  letter-spacing: 4px;
+  opacity: 0.55;
+}
+
+/* Blinking cursor */
+@keyframes blink {
+  0%, 50% { opacity: 1; }
+  51%, 100% { opacity: 0; }
+}
+
+.cursor-blink {
+  animation: blink 1s infinite;
+}
+
+/* Phase active indicator */
+.phase-active {
+  border-color: currentColor !important;
+}
+
+/* Button styles */
+.btn-neon {
+  transition: all 0.2s ease;
+}
+
+.btn-neon:hover {
+  transform: translateY(-1px);
+  filter: brightness(1.1);
+  box-shadow: 0 0 0 1px var(--soft-glow), 0 8px 20px rgba(0, 0, 0, 0.24);
+}
+
+.btn-neon:active {
+  transform: translateY(0);
+}
+
+/* Progress bar */
+.progress-bar {
+  transition: width 0.5s ease;
 }
