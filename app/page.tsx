@@ -337,7 +337,7 @@ export default function Home() {
           onClick={() => setIsSettingsOpen((prev) => !prev)}
           aria-label="Toggle settings"
           title="Settings"
-          className={`rounded border px-2.5 py-1.5 font-mono text-[10px] tracking-[0.14em] btn-neon ${
+          className={`rounded border px-3 py-2 font-mono text-[14px] tracking-[0.14em] btn-neon ${
             isSettingsOpen
               ? "border-neon-green/40 bg-neon-green/15 text-neon-green"
               : "border-zinc-700 bg-zinc-900/70 text-zinc-300"
@@ -349,7 +349,7 @@ export default function Home() {
           onClick={handleFullscreenToggle}
           aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           title={isFullscreen ? "Exit fullscreen (F)" : "Enter fullscreen (F)"}
-          className={`rounded border px-2.5 py-1.5 font-mono text-[10px] tracking-[0.14em] btn-neon ${
+          className={`rounded border px-3 py-2 font-mono text-[14px] tracking-[0.14em] btn-neon ${
             isFullscreen
               ? "border-neon-cyan/40 bg-neon-cyan/15 text-neon-cyan"
               : "border-zinc-700 bg-zinc-900/70 text-zinc-300"
