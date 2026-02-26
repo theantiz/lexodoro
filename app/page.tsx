@@ -2,19 +2,12 @@
 
 import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
 import { gsap } from "gsap";
-
-// Compiler phase configurations
-const COMPILER_PHASES = [
-  { name: "LEX", fullName: "Lexer", color: "text-neon-green", borderColor: "border-neon-green", description: "Tokenizing source code" },
-  { name: "PARSE", fullName: "Parser", color: "text-neon-cyan", borderColor: "border-neon-cyan", description: "Building abstract syntax tree" },
-  { name: "OPT", fullName: "Optimizer", color: "text-neon-purple", borderColor: "border-neon-purple", description: "Optimizing intermediate code" },
-  { name: "GEN", fullName: "Code Generator", color: "text-neon-orange", borderColor: "border-neon-orange", description: "Generating target machine code" },
-];
-
-const DEFAULT_POMODORO_MINUTES = 50;
-const DEFAULT_BREAK_MINUTES = 10;
-
-type TimerMode = "pomodoro" | "break";
+import {
+  COMPILER_PHASES,
+  DEFAULT_BREAK_MINUTES,
+  DEFAULT_POMODORO_MINUTES,
+  type TimerMode,
+} from "./timer-config";
 type WakeLockSentinelLike = {
   released: boolean;
   release: () => Promise<void>;
@@ -23,6 +16,13 @@ type NavigatorWithWakeLock = Navigator & {
   wakeLock?: {
     request: (type: "screen") => Promise<WakeLockSentinelLike>;
   };
+};
+type WebkitDocument = Document & {
+  webkitExitFullscreen?: () => Promise<void> | void;
+  webkitFullscreenElement?: Element | null;
+};
+type WebkitElement = HTMLElement & {
+  webkitRequestFullscreen?: () => Promise<void> | void;
 };
 
 export default function Home() {
@@ -78,10 +78,27 @@ export default function Home() {
     setTimeLeft(nextMode === "pomodoro" ? pomodoroTime : breakTime);
   }, [pomodoroTime, breakTime]);
   const handleFullscreenToggle = useCallback(async () => {
-    if (!document.fullscreenElement) {
-      await document.documentElement.requestFullscreen();
-    } else {
-      await document.exitFullscreen();
+    const doc = document as WebkitDocument;
+    const root = document.documentElement as WebkitElement;
+    const isCurrentlyFullscreen = Boolean(doc.fullscreenElement ?? doc.webkitFullscreenElement);
+
+    if (!isCurrentlyFullscreen) {
+      if (root.requestFullscreen) {
+        await root.requestFullscreen();
+        return;
+      }
+      if (root.webkitRequestFullscreen) {
+        await root.webkitRequestFullscreen();
+      }
+      return;
+    }
+
+    if (doc.exitFullscreen) {
+      await doc.exitFullscreen();
+      return;
+    }
+    if (doc.webkitExitFullscreen) {
+      await doc.webkitExitFullscreen();
     }
   }, []);
 
@@ -138,12 +155,17 @@ export default function Home() {
   }, [mode, pomodoroTime, breakTime, switchMode, handleFullscreenToggle]);
 
   useEffect(() => {
+    const doc = document as WebkitDocument;
     const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement));
+      setIsFullscreen(Boolean(doc.fullscreenElement ?? doc.webkitFullscreenElement));
     };
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
-    return () => document.removeEventListener("fullscreenchange", handleFullscreenChange);
+    document.addEventListener("webkitfullscreenchange", handleFullscreenChange as EventListener);
+    return () => {
+      document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      document.removeEventListener("webkitfullscreenchange", handleFullscreenChange as EventListener);
+    };
   }, []);
 
   const handleStartPause = () => setIsRunning(!isRunning);
@@ -242,7 +264,7 @@ export default function Home() {
   return (
     <main
       ref={rootRef}
-      className="relative mx-auto flex h-dvh w-full max-w-6xl flex-col items-center justify-center overflow-hidden px-4 py-4 md:px-8 md:py-6"
+      className="relative mx-auto flex min-h-dvh w-full max-w-6xl flex-col items-center justify-start overflow-x-hidden overflow-y-auto px-4 pb-24 pt-6 sm:pb-24 md:px-8 md:pt-8 lg:justify-center lg:pb-6"
       style={
         mode === "break"
           ? ({ "--neon-green": "var(--neon-cyan)" } as CSSProperties)
@@ -251,7 +273,7 @@ export default function Home() {
     >
       {/* Header */}
       <header
-        className="reveal mb-3 text-center md:mb-4"
+        className="reveal mb-4 text-center md:mb-5"
         data-gsap="reveal"
         style={{ "--reveal-delay": "80ms" } as CSSProperties}
       >
@@ -271,7 +293,7 @@ export default function Home() {
 
       {/* Main Timer Card */}
       <section
-        className="terminal-card glass-lift reveal mb-3 w-full max-w-3xl p-4 pt-11 sm:p-5 sm:pt-11 md:mb-4 md:p-6 md:pt-12"
+        className="terminal-card glass-lift reveal mb-4 w-full max-w-3xl p-4 pt-11 sm:p-5 sm:pt-11 md:mb-5 md:p-6 md:pt-12"
         data-gsap="reveal"
         style={{ "--reveal-delay": "180ms" } as CSSProperties}
       >
@@ -287,7 +309,7 @@ export default function Home() {
 
         {/* Timer Display */}
         <div className="mb-5 text-center">
-          <div className={`text-5xl font-bold font-mono leading-none tracking-[0.05em] sm:text-6xl md:text-7xl ${modeAccentClass} ${isRunning ? "timer-live" : ""}`}>
+          <div className={`text-5xl font-bold font-mono leading-none tracking-[0.05em] sm:text-6xl lg:text-7xl ${modeAccentClass} ${isRunning ? "timer-live" : ""}`}>
             {formatTime(timeLeft)}
             <span className="cursor-blink">_</span>
           </div>
@@ -345,7 +367,7 @@ export default function Home() {
 
       {/* Compiler Phases Grid */}
       <section
-        className="reveal grid w-full max-w-3xl grid-cols-2 gap-2 md:grid-cols-4 md:gap-3"
+        className="reveal grid w-full max-w-3xl grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4"
         data-gsap="reveal"
         style={{ "--reveal-delay": "280ms" } as CSSProperties}
       >
@@ -406,7 +428,7 @@ export default function Home() {
 
       {/* Corner brackets */}
       {isSettingsOpen && (
-        <section data-gsap="reveal" className="reveal fixed bottom-20 right-6 z-30 w-64 rounded border border-zinc-700 bg-zinc-900/95 p-3 font-mono text-xs text-zinc-300 shadow-xl">
+        <section data-gsap="reveal" className="reveal fixed bottom-20 left-4 right-4 z-30 rounded border border-zinc-700 bg-zinc-900/95 p-3 font-mono text-xs text-zinc-300 shadow-xl sm:bottom-20 sm:left-auto sm:right-4 sm:w-72">
           <div className="mb-3 text-[10px] tracking-[0.14em] text-zinc-500">SETTINGS</div>
           <label className="mb-2 block">
             <span className="mb-1 block text-[10px] tracking-wide text-zinc-500">FOCUS MINUTES</span>
@@ -452,7 +474,7 @@ export default function Home() {
         </section>
       )}
       <div
-        className="reveal fixed bottom-6 right-6 z-20 flex items-center gap-2 rounded border border-zinc-800 bg-zinc-950/60 p-1"
+        className="reveal fixed bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded border border-zinc-800 bg-zinc-950/60 p-1 sm:bottom-5 sm:left-auto sm:right-4 sm:translate-x-0 md:bottom-6 md:right-6"
         data-gsap="reveal"
         style={{ "--reveal-delay": "440ms" } as CSSProperties}
       >
@@ -481,10 +503,10 @@ export default function Home() {
           {isFullscreen ? "⤡" : "⤢"}
         </button>
       </div>
-      <div className="fixed top-4 left-4 text-zinc-700 text-xl font-mono">┌</div>
-      <div className="fixed top-4 right-4 text-zinc-700 text-xl font-mono">┐</div>
-      <div className="fixed bottom-4 left-4 text-zinc-700 text-xl font-mono">└</div>
-      <div className="fixed bottom-4 right-4 text-zinc-700 text-xl font-mono">┘</div>
+      <div className="fixed top-4 left-4 hidden text-xl font-mono text-zinc-700 md:block">┌</div>
+      <div className="fixed top-4 right-4 hidden text-xl font-mono text-zinc-700 md:block">┐</div>
+      <div className="fixed bottom-4 left-4 hidden text-xl font-mono text-zinc-700 md:block">└</div>
+      <div className="fixed bottom-4 right-4 hidden text-xl font-mono text-zinc-700 md:block">┘</div>
     </main>
   );
 }
