@@ -39,6 +39,14 @@ body {
   position: relative;
   overflow-x: hidden;
   line-height: 1.4;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
 }
 
 body::before {
