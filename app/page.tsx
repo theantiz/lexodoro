@@ -274,6 +274,12 @@ export default function Home() {
           : undefined
       }
     >
+      <div
+        aria-hidden
+        className="pointer-events-none fixed inset-0 -z-10 bg-cover bg-center opacity-[1] mix-blend-soft-light"
+        style={{ backgroundImage: "url('/old-compiler-bg.svg')" }}
+      />
+
       <TimerHeader statusText={statusText} />
 
       <TimerCard
