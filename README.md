@@ -5,6 +5,7 @@ Lexodoro is a compiler-themed Pomodoro timer built with Next.js.
 ## Features
 
 - Focus and break timer modes
+- Habit/discipline-inspired default cadence (`50m` focus / `10m` break)
 - Compiler phase progression (Lex, Parse, Optimize, Generate)
 - Live session stats (`cycles`, `focus_min`)
 - Keyboard shortcuts:
@@ -18,6 +19,18 @@ Lexodoro is a compiler-themed Pomodoro timer built with Next.js.
   - Toggle control button icons
 - Fullscreen mode toggle
 - Custom Lexodoro app icon
+
+## Timing Philosophy
+
+Lexodoro uses a habit-and-discipline cadence by default:
+
+- `50` minutes focus: long enough for meaningful deep work.
+- `10` minutes break: deliberate reset before the next block.
+
+The in-app messaging reinforces two principles:
+
+- Show up consistently (habit) instead of waiting for motivation.
+- Protect focused blocks and structured recovery (discipline).
 
 ## Compiler Phases
 

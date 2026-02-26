@@ -11,8 +11,8 @@ const COMPILER_PHASES = [
   { name: "GEN", fullName: "Code Generator", color: "text-neon-orange", borderColor: "border-neon-orange", description: "Generating target machine code" },
 ];
 
-const DEFAULT_POMODORO_MINUTES = 25;
-const DEFAULT_BREAK_MINUTES = 5;
+const DEFAULT_POMODORO_MINUTES = 50;
+const DEFAULT_BREAK_MINUTES = 10;
 
 type TimerMode = "pomodoro" | "break";
 type WakeLockSentinelLike = {
@@ -68,6 +68,10 @@ export default function Home() {
       : isRunning
         ? "COMPILING FOCUS..."
         : "READY TO COMPILE...";
+  const disciplineText =
+    mode === "break"
+      ? "Discipline reset: recover with intent, then re-enter the next block."
+      : "Habit cadence: show up daily, protect one deep 50-minute block.";
 
   const switchMode = useCallback((nextMode: TimerMode) => {
     setMode(nextMode);
@@ -260,6 +264,9 @@ export default function Home() {
         <p className="mx-auto max-w-md text-[11px] text-zinc-500 font-mono tracking-[0.14em] sm:text-xs">
           {statusText}
         </p>
+        <p className="mx-auto mt-2 max-w-xl text-[10px] font-mono tracking-[0.08em] text-zinc-400 sm:text-[11px]">
+          {disciplineText}
+        </p>
       </header>
 
       {/* Main Timer Card */}
@@ -383,16 +390,16 @@ export default function Home() {
       >
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-[11px] font-mono text-zinc-600">
           <div>
-            <span className="text-neon-purple">session</span>
-            <span className="text-zinc-600 ml-2">{mode === "pomodoro" ? "COMPILING" : "BREAKING"}</span>
+            <span className="text-neon-cyan">session</span>
+            <span className="ml-2 text-zinc-400">{mode === "pomodoro" ? "COMPILING" : "BREAKING"}</span>
           </div>
           <div>
             <span className="text-neon-cyan">cycles</span>
-            <span className="text-zinc-400 ml-2">{completedCycles}</span>
+            <span className="ml-2 text-zinc-400">{completedCycles}</span>
           </div>
           <div>
-            <span className="text-neon-green">focus_min</span>
-            <span className="text-zinc-400 ml-2">{focusMinutes}</span>
+            <span className="text-neon-cyan">focus_min</span>
+            <span className="ml-2 text-zinc-400">{focusMinutes}</span>
           </div>
         </div>
       </footer>
