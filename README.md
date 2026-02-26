@@ -19,6 +19,26 @@ Lexodoro is a compiler-themed Pomodoro timer built with Next.js.
 - Fullscreen mode toggle
 - Custom Lexodoro app icon
 
+## Compiler Phases
+
+Lexodoro splits each focus session into 4 conceptual compiler stages:
+
+1. **LEX (Lexer)**
+   Breaks raw source text into tokens (keywords, identifiers, operators, literals).  
+   In Lexodoro: start-of-session phase for warming up and defining the exact task.
+
+2. **PARSE (Parser)**
+   Organizes tokens into a structured representation (like an abstract syntax tree).  
+   In Lexodoro: structure your work, outline steps, and create a clear implementation path.
+
+3. **OPT (Optimizer)**
+   Improves intermediate code for performance/efficiency without changing behavior.  
+   In Lexodoro: refine your solution, simplify logic, remove waste, and improve quality.
+
+4. **GEN (Code Generator)**
+   Produces final target output (machine code or another executable form).  
+   In Lexodoro: finalize results, ship changes, and prepare deliverables.
+
 ## Tech Stack
 
 - Next.js (App Router)

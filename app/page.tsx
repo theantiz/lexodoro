@@ -1,6 +1,7 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
+import { gsap } from "gsap";
 
 // Compiler phase configurations
 const COMPILER_PHASES = [
@@ -14,8 +15,20 @@ const DEFAULT_POMODORO_MINUTES = 25;
 const DEFAULT_BREAK_MINUTES = 5;
 
 type TimerMode = "pomodoro" | "break";
+type WakeLockSentinelLike = {
+  released: boolean;
+  release: () => Promise<void>;
+};
+type NavigatorWithWakeLock = Navigator & {
+  wakeLock?: {
+    request: (type: "screen") => Promise<WakeLockSentinelLike>;
+  };
+};
 
 export default function Home() {
+  const rootRef = useRef<HTMLElement | null>(null);
+  const progressBarRef = useRef<HTMLDivElement | null>(null);
+  const wakeLockRef = useRef<WakeLockSentinelLike | null>(null);
   const [pomodoroMinutes, setPomodoroMinutes] = useState(DEFAULT_POMODORO_MINUTES);
   const [breakMinutes, setBreakMinutes] = useState(DEFAULT_BREAK_MINUTES);
   const [timeLeft, setTimeLeft] = useState(DEFAULT_POMODORO_MINUTES * 60);
@@ -148,10 +161,96 @@ export default function Home() {
     setIsSettingsOpen(false);
   };
 
+  const requestWakeLock = useCallback(async () => {
+    const nav = navigator as NavigatorWithWakeLock;
+    if (!nav.wakeLock || wakeLockRef.current) return;
+
+    try {
+      wakeLockRef.current = await nav.wakeLock.request("screen");
+    } catch {
+      wakeLockRef.current = null;
+    }
+  }, []);
+
+  const releaseWakeLock = useCallback(async () => {
+    if (!wakeLockRef.current) return;
+
+    try {
+      await wakeLockRef.current.release();
+    } catch {
+      // no-op: release can fail if lock is already released by the browser
+    } finally {
+      wakeLockRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!rootRef.current) return;
+    const ctx = gsap.context(() => {
+      gsap.fromTo(
+        "[data-gsap='reveal']",
+        { y: 18, autoAlpha: 0, filter: "blur(6px)" },
+        {
+          y: 0,
+          autoAlpha: 1,
+          filter: "blur(0px)",
+          duration: 0.9,
+          ease: "power3.out",
+          stagger: 0.1,
+          clearProps: "filter",
+        },
+      );
+    }, rootRef);
+
+    return () => ctx.revert();
+  }, []);
+
+  useEffect(() => {
+    if (!progressBarRef.current) return;
+    gsap.to(progressBarRef.current, {
+      width: `${progress}%`,
+      duration: 0.8,
+      ease: "power3.out",
+    });
+  }, [progress]);
+
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && isRunning) {
+        void requestWakeLock();
+      }
+    };
+
+    if (isRunning) {
+      void requestWakeLock();
+      document.addEventListener("visibilitychange", handleVisibilityChange);
+    } else {
+      void releaseWakeLock();
+    }
+
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      if (!isRunning) return;
+      void releaseWakeLock();
+    };
+  }, [isRunning, requestWakeLock, releaseWakeLock]);
+
   return (
-    <main className="relative mx-auto flex h-dvh w-full max-w-6xl flex-col items-center justify-center overflow-hidden px-4 py-4 md:px-8 md:py-6">
+    <main
+      ref={rootRef}
+      className="relative mx-auto flex h-dvh w-full max-w-6xl flex-col items-center justify-center overflow-hidden px-4 py-4 md:px-8 md:py-6"
+      style={
+        mode === "break"
+          ? ({ "--neon-green": "var(--neon-cyan)" } as CSSProperties)
+          : undefined
+      }
+    >
       {/* Header */}
-      <header className="mb-3 text-center md:mb-4">
+      <header
+        className="reveal mb-3 text-center md:mb-4"
+        data-gsap="reveal"
+        style={{ "--reveal-delay": "80ms" } as CSSProperties}
+      >
         <h1 className="mb-2 text-3xl font-bold font-mono leading-tight tracking-tight sm:text-4xl md:text-5xl">
           {`<`}
           <span className="text-white">Lexo</span>
@@ -164,7 +263,11 @@ export default function Home() {
       </header>
 
       {/* Main Timer Card */}
-      <section className="terminal-card mb-3 w-full max-w-3xl p-4 pt-11 sm:p-5 sm:pt-11 md:mb-4 md:p-6 md:pt-12">
+      <section
+        className="terminal-card glass-lift reveal mb-3 w-full max-w-3xl p-4 pt-11 sm:p-5 sm:pt-11 md:mb-4 md:p-6 md:pt-12"
+        data-gsap="reveal"
+        style={{ "--reveal-delay": "180ms" } as CSSProperties}
+      >
         {/* Phase indicator */}
         <div className="mb-4 flex items-center justify-between gap-4">
           <div className={`text-[11px] md:text-xs font-mono tracking-wide ${modeAccentClass}`}>
@@ -177,7 +280,7 @@ export default function Home() {
 
         {/* Timer Display */}
         <div className="mb-5 text-center">
-          <div className={`text-5xl font-bold font-mono leading-none tracking-[0.05em] sm:text-6xl md:text-7xl ${modeAccentClass}`}>
+          <div className={`text-5xl font-bold font-mono leading-none tracking-[0.05em] sm:text-6xl md:text-7xl ${modeAccentClass} ${isRunning ? "timer-live" : ""}`}>
             {formatTime(timeLeft)}
             <span className="cursor-blink">_</span>
           </div>
@@ -189,10 +292,11 @@ export default function Home() {
         {/* Progress Bar */}
         <div className="mb-5 h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
           <div 
+            ref={progressBarRef}
             className="h-full progress-bar"
             style={{ 
-              width: `${progress}%`,
-              backgroundColor: mode === "pomodoro" ? '#3fb950' : '#58a6ff'
+              width: "0%",
+              backgroundColor: "#58a6ff"
             }}
           ></div>
         </div>
@@ -233,7 +337,11 @@ export default function Home() {
       </section>
 
       {/* Compiler Phases Grid */}
-      <section className="grid w-full max-w-3xl grid-cols-2 gap-2 md:grid-cols-4 md:gap-3">
+      <section
+        className="reveal grid w-full max-w-3xl grid-cols-2 gap-2 md:grid-cols-4 md:gap-3"
+        data-gsap="reveal"
+        style={{ "--reveal-delay": "280ms" } as CSSProperties}
+      >
         {COMPILER_PHASES.map((phase, index) => {
           const isActive = index <= activePhaseIndex && mode === "pomodoro";
           const isCurrent = index === activePhaseIndex && mode === "pomodoro";
@@ -241,7 +349,7 @@ export default function Home() {
           return (
             <div
               key={phase.name}
-              className={`terminal-card p-3 pt-9 text-center transition-all duration-300 ${
+              className={`terminal-card phase-card glass-lift p-3 pt-9 text-center transition-all duration-300 ${
                 isActive ? phase.borderColor : "border-zinc-800"
               }`}
               style={{ 
@@ -259,7 +367,7 @@ export default function Home() {
               </div>
               {isCurrent && (
                 <div className="mt-3">
-                  <span className="inline-block w-2 h-2 bg-neon-green rounded-full opacity-80"></span>
+                  <span className="phase-current inline-block h-2 w-2 rounded-full bg-neon-green opacity-80"></span>
                 </div>
               )}
             </div>
@@ -268,7 +376,11 @@ export default function Home() {
       </section>
 
       {/* Stats Footer */}
-      <footer className="mt-3 text-center md:mt-4">
+      <footer
+        className="reveal mt-3 text-center md:mt-4"
+        data-gsap="reveal"
+        style={{ "--reveal-delay": "360ms" } as CSSProperties}
+      >
         <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-[11px] font-mono text-zinc-600">
           <div>
             <span className="text-neon-purple">session</span>
@@ -287,7 +399,7 @@ export default function Home() {
 
       {/* Corner brackets */}
       {isSettingsOpen && (
-        <section className="fixed bottom-20 right-6 z-30 w-64 rounded border border-zinc-700 bg-zinc-900/95 p-3 font-mono text-xs text-zinc-300 shadow-xl">
+        <section data-gsap="reveal" className="reveal fixed bottom-20 right-6 z-30 w-64 rounded border border-zinc-700 bg-zinc-900/95 p-3 font-mono text-xs text-zinc-300 shadow-xl">
           <div className="mb-3 text-[10px] tracking-[0.14em] text-zinc-500">SETTINGS</div>
           <label className="mb-2 block">
             <span className="mb-1 block text-[10px] tracking-wide text-zinc-500">FOCUS MINUTES</span>
@@ -295,7 +407,7 @@ export default function Home() {
               value={draftPomodoroMinutes}
               onChange={(event) => setDraftPomodoroMinutes(event.target.value)}
               inputMode="numeric"
-              className="w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-200 outline-none focus:border-neon-green/60"
+              className="w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-200 outline-none focus:border-neon-cyan/60"
             />
           </label>
           <label className="mb-2 block">
@@ -312,14 +424,14 @@ export default function Home() {
               type="checkbox"
               checked={showButtonIcons}
               onChange={(event) => setShowButtonIcons(event.target.checked)}
-              className="h-3.5 w-3.5 accent-green-500"
+              className="h-3.5 w-3.5 accent-blue-500"
             />
             show button icons
           </label>
           <div className="flex gap-2">
             <button
               onClick={handleApplySettings}
-              className="flex-1 rounded border border-neon-green/40 bg-neon-green/15 px-2 py-1.5 text-[10px] tracking-[0.14em] text-neon-green btn-neon"
+              className="flex-1 rounded border border-neon-cyan/40 bg-neon-cyan/15 px-2 py-1.5 text-[10px] tracking-[0.14em] text-neon-cyan btn-neon"
             >
               APPLY
             </button>
@@ -332,7 +444,11 @@ export default function Home() {
           </div>
         </section>
       )}
-      <div className="fixed bottom-6 right-6 z-20 flex items-center gap-2 rounded border border-zinc-800 bg-zinc-950/60 p-1">
+      <div
+        className="reveal fixed bottom-6 right-6 z-20 flex items-center gap-2 rounded border border-zinc-800 bg-zinc-950/60 p-1"
+        data-gsap="reveal"
+        style={{ "--reveal-delay": "440ms" } as CSSProperties}
+      >
         <button
           onClick={() => setIsSettingsOpen((prev) => !prev)}
           aria-label="Toggle settings"
