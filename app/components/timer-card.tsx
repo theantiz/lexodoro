@@ -1,4 +1,5 @@
 import type { CSSProperties, RefObject } from "react";
+import { FiPlay, FiRotateCcw, FiSkipForward, FiSquare } from "react-icons/fi";
 
 type TimerCardProps = {
   mode: "pomodoro" | "break";
@@ -37,7 +38,10 @@ export default function TimerCard({
     >
       <div className="mb-4 flex items-center justify-between gap-4">
         <div className={`text-[11px] font-mono tracking-wide md:text-xs ${modeAccentClass}`}>
-          {mode === "pomodoro" ? "▶ COMPILE_MODE" : "▶ BREAK_MODE"}
+          <span className="inline-flex items-center gap-1">
+            <FiPlay size={10} aria-hidden />
+            {mode === "pomodoro" ? "COMPILE_MODE" : "BREAK_MODE"}
+          </span>
         </div>
         <div className="text-[11px] font-mono tracking-wide text-zinc-500">PHASE: {currentPhaseName}</div>
       </div>
@@ -61,21 +65,30 @@ export default function TimerCard({
             isRunning ? "border border-zinc-600 bg-zinc-800/70 text-zinc-100" : `${modeSoftBgClass} ${modeAccentClass} border`
           }`}
         >
-          {isRunning ? `${showButtonIcons ? "■ " : ""}PAUSE` : `${showButtonIcons ? "▶ " : ""}RUN`}
+          <span className="inline-flex items-center gap-1.5">
+            {showButtonIcons ? (isRunning ? <FiSquare size={12} aria-hidden /> : <FiPlay size={12} aria-hidden />) : null}
+            {isRunning ? "PAUSE" : "RUN"}
+          </span>
         </button>
 
         <button
           onClick={onReset}
           className="btn-neon rounded border border-zinc-700 bg-zinc-800/50 px-5 py-2.5 font-mono text-xs font-bold tracking-wide text-zinc-300"
         >
-          {showButtonIcons ? "↺ " : ""}RESET
+          <span className="inline-flex items-center gap-1.5">
+            {showButtonIcons ? <FiRotateCcw size={12} aria-hidden /> : null}
+            RESET
+          </span>
         </button>
 
         <button
           onClick={onSkip}
           className="btn-neon rounded border border-zinc-700 bg-zinc-800/50 px-5 py-2.5 font-mono text-xs font-bold tracking-wide text-zinc-300"
         >
-          {showButtonIcons ? "⏭ " : ""}SKIP
+          <span className="inline-flex items-center gap-1.5">
+            {showButtonIcons ? <FiSkipForward size={12} aria-hidden /> : null}
+            SKIP
+          </span>
         </button>
       </div>
 

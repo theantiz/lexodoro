@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import { FiMaximize2, FiMinimize2, FiSettings } from "react-icons/fi";
 
 type FloatingControlsProps = {
   isSettingsOpen: boolean;
@@ -27,7 +28,7 @@ export default function FloatingControls({
           isSettingsOpen ? "border-neon-green/40 bg-neon-green/15 text-neon-green" : "border-zinc-700 bg-zinc-900/70 text-zinc-300"
         }`}
       >
-        ⚙
+        <FiSettings size={14} aria-hidden />
       </button>
       <button
         onClick={onToggleFullscreen}
@@ -37,7 +38,7 @@ export default function FloatingControls({
           isFullscreen ? "border-neon-cyan/40 bg-neon-cyan/15 text-neon-cyan" : "border-zinc-700 bg-zinc-900/70 text-zinc-300"
         }`}
       >
-        {isFullscreen ? "⤡" : "⤢"}
+        {isFullscreen ? <FiMinimize2 size={14} aria-hidden /> : <FiMaximize2 size={14} aria-hidden />}
       </button>
     </div>
   );
