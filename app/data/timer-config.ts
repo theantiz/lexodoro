@@ -29,6 +29,8 @@ export const COMPILER_PHASES = [
   },
 ] as const;
 
+export type CompilerPhase = (typeof COMPILER_PHASES)[number];
+
 export const DEFAULT_POMODORO_MINUTES = 50;
 export const DEFAULT_BREAK_MINUTES = 10;
 

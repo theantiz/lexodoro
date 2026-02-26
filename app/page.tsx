@@ -2,12 +2,19 @@
 
 import { useState, useEffect, useCallback, useRef, type CSSProperties } from "react";
 import { gsap } from "gsap";
+import CornerBrackets from "./components/corner-brackets";
+import FloatingControls from "./components/floating-controls";
+import PhasesGrid from "./components/phases-grid";
+import SettingsPanel from "./components/settings-panel";
+import StatsFooter from "./components/stats-footer";
+import TimerCard from "./components/timer-card";
+import TimerHeader from "./components/timer-header";
 import {
   COMPILER_PHASES,
   DEFAULT_BREAK_MINUTES,
   DEFAULT_POMODORO_MINUTES,
   type TimerMode,
-} from "./timer-config";
+} from "./data/timer-config";
 type WakeLockSentinelLike = {
   released: boolean;
   release: () => Promise<void>;
@@ -68,10 +75,6 @@ export default function Home() {
       : isRunning
         ? "COMPILING FOCUS..."
         : "READY TO COMPILE...";
-  const disciplineText =
-    mode === "break"
-      ? "Discipline reset: recover with intent, then re-enter the next block."
-      : "Habit cadence: show up daily, protect one deep 50-minute block.";
 
   const switchMode = useCallback((nextMode: TimerMode) => {
     setMode(nextMode);
@@ -264,249 +267,55 @@ export default function Home() {
   return (
     <main
       ref={rootRef}
-      className="relative mx-auto flex min-h-dvh w-full max-w-6xl flex-col items-center justify-start overflow-x-hidden overflow-y-auto px-4 pb-24 pt-6 sm:pb-24 md:px-8 md:pt-8 lg:justify-center lg:pb-6"
+      className="smooth-scroll relative mx-auto flex min-h-dvh w-full max-w-6xl flex-col items-center justify-start overflow-x-hidden overflow-y-auto px-4 pb-[calc(9rem+env(safe-area-inset-bottom))] pt-6 sm:pb-28 md:px-8 md:pt-8 lg:justify-center lg:pb-8"
       style={
         mode === "break"
           ? ({ "--neon-green": "var(--neon-cyan)" } as CSSProperties)
           : undefined
       }
     >
-      {/* Header */}
-      <header
-        className="reveal mb-4 text-center md:mb-5"
-        data-gsap="reveal"
-        style={{ "--reveal-delay": "80ms" } as CSSProperties}
-      >
-        <h1 className="mb-2 text-3xl font-bold font-mono leading-tight tracking-tight sm:text-4xl md:text-5xl">
-          {`<`}
-          <span className="text-white">Lexo</span>
-          <span className="text-neon-green">doro</span>
-          {`/>`}
-        </h1>
-        <p className="mx-auto max-w-md text-[11px] text-zinc-500 font-mono tracking-[0.14em] sm:text-xs">
-          {statusText}
-        </p>
-        <p className="mx-auto mt-2 max-w-xl text-[10px] font-mono tracking-[0.08em] text-zinc-400 sm:text-[11px]">
-          {disciplineText}
-        </p>
-      </header>
+      <TimerHeader statusText={statusText} />
 
-      {/* Main Timer Card */}
-      <section
-        className="terminal-card glass-lift reveal mb-4 w-full max-w-3xl p-4 pt-11 sm:p-5 sm:pt-11 md:mb-5 md:p-6 md:pt-12"
-        data-gsap="reveal"
-        style={{ "--reveal-delay": "180ms" } as CSSProperties}
-      >
-        {/* Phase indicator */}
-        <div className="mb-4 flex items-center justify-between gap-4">
-          <div className={`text-[11px] md:text-xs font-mono tracking-wide ${modeAccentClass}`}>
-            {mode === "pomodoro" ? "▶ COMPILE_MODE" : "▶ BREAK_MODE"}
-          </div>
-          <div className="text-[11px] text-zinc-500 font-mono tracking-wide">
-            PHASE: {currentPhaseInfo.name}
-          </div>
-        </div>
+      <TimerCard
+        mode={mode}
+        modeAccentClass={modeAccentClass}
+        modeSoftBgClass={modeSoftBgClass}
+        currentPhaseName={currentPhaseInfo.name}
+        timeLabel={formatTime(timeLeft)}
+        currentPhaseDescription={currentPhaseInfo.description}
+        isRunning={isRunning}
+        showButtonIcons={showButtonIcons}
+        progressBarRef={progressBarRef}
+        onStartPause={handleStartPause}
+        onReset={handleReset}
+        onSkip={handleSkip}
+      />
 
-        {/* Timer Display */}
-        <div className="mb-5 text-center">
-          <div className={`text-5xl font-bold font-mono leading-none tracking-[0.05em] sm:text-6xl lg:text-7xl ${modeAccentClass} ${isRunning ? "timer-live" : ""}`}>
-            {formatTime(timeLeft)}
-            <span className="cursor-blink">_</span>
-          </div>
-          <div className="mt-2 text-zinc-500 text-xs font-mono tracking-wide">
-            {currentPhaseInfo.description}
-          </div>
-        </div>
+      <PhasesGrid activePhaseIndex={activePhaseIndex} mode={mode} />
 
-        {/* Progress Bar */}
-        <div className="mb-5 h-1.5 w-full overflow-hidden rounded-full bg-zinc-800">
-          <div 
-            ref={progressBarRef}
-            className="h-full progress-bar"
-            style={{ 
-              width: "0%",
-              backgroundColor: "#58a6ff"
-            }}
-          ></div>
-        </div>
+      <StatsFooter mode={mode} completedCycles={completedCycles} focusMinutes={focusMinutes} />
 
-        {/* Controls */}
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-3">
-          <button
-            onClick={handleStartPause}
-            className={`rounded px-5 py-2.5 font-mono text-xs font-bold tracking-wide btn-neon ${
-              isRunning 
-                ? "bg-zinc-800/70 text-zinc-100 border border-zinc-600"
-                : `${modeSoftBgClass} ${modeAccentClass} border`
-            }`}
-          >
-            {isRunning ? `${showButtonIcons ? "■ " : ""}PAUSE` : `${showButtonIcons ? "▶ " : ""}RUN`}
-          </button>
-          
-          <button
-            onClick={handleReset}
-            className="rounded border border-zinc-700 bg-zinc-800/50 px-5 py-2.5 font-mono text-xs font-bold tracking-wide text-zinc-300 btn-neon"
-          >
-            {showButtonIcons ? "↺ " : ""}RESET
-          </button>
-
-          <button
-            onClick={handleSkip}
-            className="rounded border border-zinc-700 bg-zinc-800/50 px-5 py-2.5 font-mono text-xs font-bold tracking-wide text-zinc-300 btn-neon"
-          >
-            {showButtonIcons ? "⏭ " : ""}SKIP
-          </button>
-        </div>
-
-        <div className="mt-3 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-[10px] font-mono text-zinc-500 tracking-wide">
-          <span><span className="text-zinc-300">SPACE</span> start/pause</span>
-          <span><span className="text-zinc-300">R</span> reset</span>
-          <span><span className="text-zinc-300">S</span> skip mode</span>
-        </div>
-      </section>
-
-      {/* Compiler Phases Grid */}
-      <section
-        className="reveal grid w-full max-w-3xl grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4"
-        data-gsap="reveal"
-        style={{ "--reveal-delay": "280ms" } as CSSProperties}
-      >
-        {COMPILER_PHASES.map((phase, index) => {
-          const isActive = index <= activePhaseIndex && mode === "pomodoro";
-          const isCurrent = index === activePhaseIndex && mode === "pomodoro";
-          
-          return (
-            <div
-              key={phase.name}
-              className={`terminal-card phase-card glass-lift p-3 pt-9 text-center transition-all duration-300 ${
-                isActive ? phase.borderColor : "border-zinc-800"
-              }`}
-              style={{ 
-                borderColor: isActive ? undefined : 'rgba(255,255,255,0.08)',
-              }}
-            >
-              <div className={`mb-1 text-[11px] font-mono tracking-wide ${isActive ? phase.color : "text-zinc-600"}`}>
-                PHASE {index + 1}
-              </div>
-              <div className={`text-lg font-bold font-mono leading-none ${isActive ? phase.color : "text-zinc-500"}`}>
-                {phase.name}
-              </div>
-              <div className={`mt-2 text-[11px] font-mono tracking-wide ${isActive ? "text-zinc-400" : "text-zinc-600"}`}>
-                {phase.fullName}
-              </div>
-              {isCurrent && (
-                <div className="mt-3">
-                  <span className="phase-current inline-block h-2 w-2 rounded-full bg-neon-green opacity-80"></span>
-                </div>
-              )}
-            </div>
-          );
-        })}
-      </section>
-
-      {/* Stats Footer */}
-      <footer
-        className="reveal mt-3 text-center md:mt-4"
-        data-gsap="reveal"
-        style={{ "--reveal-delay": "360ms" } as CSSProperties}
-      >
-        <div className="flex flex-wrap items-center justify-center gap-x-6 gap-y-1 text-[11px] font-mono text-zinc-600">
-          <div>
-            <span className="text-neon-cyan">session</span>
-            <span className="ml-2 text-zinc-400">{mode === "pomodoro" ? "COMPILING" : "BREAKING"}</span>
-          </div>
-          <div>
-            <span className="text-neon-cyan">cycles</span>
-            <span className="ml-2 text-zinc-400">{completedCycles}</span>
-          </div>
-          <div>
-            <span className="text-neon-cyan">focus_min</span>
-            <span className="ml-2 text-zinc-400">{focusMinutes}</span>
-          </div>
-        </div>
-      </footer>
-
-      {/* Corner brackets */}
       {isSettingsOpen && (
-        <section data-gsap="reveal" className="reveal fixed bottom-20 left-4 right-4 z-30 rounded border border-zinc-700 bg-zinc-900/95 p-3 font-mono text-xs text-zinc-300 shadow-xl sm:bottom-20 sm:left-auto sm:right-4 sm:w-72">
-          <div className="mb-3 text-[10px] tracking-[0.14em] text-zinc-500">SETTINGS</div>
-          <label className="mb-2 block">
-            <span className="mb-1 block text-[10px] tracking-wide text-zinc-500">FOCUS MINUTES</span>
-            <input
-              value={draftPomodoroMinutes}
-              onChange={(event) => setDraftPomodoroMinutes(event.target.value)}
-              inputMode="numeric"
-              className="w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-200 outline-none focus:border-neon-cyan/60"
-            />
-          </label>
-          <label className="mb-2 block">
-            <span className="mb-1 block text-[10px] tracking-wide text-zinc-500">BREAK MINUTES</span>
-            <input
-              value={draftBreakMinutes}
-              onChange={(event) => setDraftBreakMinutes(event.target.value)}
-              inputMode="numeric"
-              className="w-full rounded border border-zinc-700 bg-zinc-950 px-2 py-1.5 text-zinc-200 outline-none focus:border-neon-cyan/60"
-            />
-          </label>
-          <label className="mb-3 flex items-center gap-2 text-[11px] text-zinc-300">
-            <input
-              type="checkbox"
-              checked={showButtonIcons}
-              onChange={(event) => setShowButtonIcons(event.target.checked)}
-              className="h-3.5 w-3.5 accent-blue-500"
-            />
-            show button icons
-          </label>
-          <div className="flex gap-2">
-            <button
-              onClick={handleApplySettings}
-              className="flex-1 rounded border border-neon-cyan/40 bg-neon-cyan/15 px-2 py-1.5 text-[10px] tracking-[0.14em] text-neon-cyan btn-neon"
-            >
-              APPLY
-            </button>
-            <button
-              onClick={() => setIsSettingsOpen(false)}
-              className="rounded border border-zinc-700 bg-zinc-800/50 px-2 py-1.5 text-[10px] tracking-[0.14em] text-zinc-300 btn-neon"
-            >
-              CLOSE
-            </button>
-          </div>
-        </section>
+        <SettingsPanel
+          draftPomodoroMinutes={draftPomodoroMinutes}
+          draftBreakMinutes={draftBreakMinutes}
+          showButtonIcons={showButtonIcons}
+          setDraftPomodoroMinutes={setDraftPomodoroMinutes}
+          setDraftBreakMinutes={setDraftBreakMinutes}
+          setShowButtonIcons={setShowButtonIcons}
+          onApply={handleApplySettings}
+          onClose={() => setIsSettingsOpen(false)}
+        />
       )}
-      <div
-        className="reveal fixed bottom-4 left-1/2 z-20 flex -translate-x-1/2 items-center gap-2 rounded border border-zinc-800 bg-zinc-950/60 p-1 sm:bottom-5 sm:left-auto sm:right-4 sm:translate-x-0 md:bottom-6 md:right-6"
-        data-gsap="reveal"
-        style={{ "--reveal-delay": "440ms" } as CSSProperties}
-      >
-        <button
-          onClick={() => setIsSettingsOpen((prev) => !prev)}
-          aria-label="Toggle settings"
-          title="Settings"
-          className={`rounded border px-3 py-2 font-mono text-[14px] tracking-[0.14em] btn-neon ${
-            isSettingsOpen
-              ? "border-neon-green/40 bg-neon-green/15 text-neon-green"
-              : "border-zinc-700 bg-zinc-900/70 text-zinc-300"
-          }`}
-        >
-          ⚙
-        </button>
-        <button
-          onClick={handleFullscreenToggle}
-          aria-label={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
-          title={isFullscreen ? "Exit fullscreen (F)" : "Enter fullscreen (F)"}
-          className={`rounded border px-3 py-2 font-mono text-[14px] tracking-[0.14em] btn-neon ${
-            isFullscreen
-              ? "border-neon-cyan/40 bg-neon-cyan/15 text-neon-cyan"
-              : "border-zinc-700 bg-zinc-900/70 text-zinc-300"
-          }`}
-        >
-          {isFullscreen ? "⤡" : "⤢"}
-        </button>
-      </div>
-      <div className="fixed top-4 left-4 hidden text-xl font-mono text-zinc-700 md:block">┌</div>
-      <div className="fixed top-4 right-4 hidden text-xl font-mono text-zinc-700 md:block">┐</div>
-      <div className="fixed bottom-4 left-4 hidden text-xl font-mono text-zinc-700 md:block">└</div>
-      <div className="fixed bottom-4 right-4 hidden text-xl font-mono text-zinc-700 md:block">┘</div>
+
+      <FloatingControls
+        isSettingsOpen={isSettingsOpen}
+        isFullscreen={isFullscreen}
+        onToggleSettings={() => setIsSettingsOpen((prev) => !prev)}
+        onToggleFullscreen={handleFullscreenToggle}
+      />
+
+      <CornerBrackets />
     </main>
   );
 }
